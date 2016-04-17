@@ -2,6 +2,9 @@ extern "C" {
 #include "user_interface.h"
 }
 
+#include "set"
+using namespace std;
+
 #define FRAME_TYPE_MANAGEMENT 0
 #define FRAME_TYPE_CONTROL 1
 #define FRAME_TYPE_DATA 2
@@ -78,11 +81,32 @@ struct sniffer_buf{
   u16 cnt;// Number of packages
 };
 
+class MAC {
+  public:
+  uint8 addr[6];
+};
+
+class Comp {
+  public:
+  bool operator()(MAC m1, MAC m2) {
+    for(int i=0; i<6; i++) {
+      if(m1.addr[i] < m2.addr[i]) {
+        return true;
+      } else if (m1.addr[i] > m2.addr[i]) {
+        return false;
+      }
+    }
+    return false;
+  }
+};
+
+set <MAC, Comp> macs;
+uint8 sec_count;
+
 void callback(uint8 *buf, uint16 len) {
     uint16 i;
     uint8_t type;
 
-    lpframectrl_80211 framectrl;
     struct router_info *info = NULL;
     if (len < sizeof(struct RxControl) + sizeof(struct w80211_header)) {
         return;
@@ -90,26 +114,14 @@ void callback(uint8 *buf, uint16 len) {
     struct sniffer_buf *sniffer = (struct sniffer_buf*)buf;
     buf +=sizeof(struct RxControl);
     struct w80211_header *probe_buf = (struct w80211_header*)buf;
-    Serial.print("r ");
-    for(int i=0; i<6; i++) {
-      Serial.print(probe_buf->rdaddr[i], HEX);
-      Serial.print(':');
-    }
-    Serial.println();
 
-    Serial.print("t ");
-    for(int i=0; i<6; i++) {
-      Serial.print(probe_buf->tsaddr[i], HEX);
-      Serial.print(':');
-    }
-    Serial.println();
-
-    Serial.print("b ");
-    for(int i=0; i<6; i++) {
-      Serial.print(probe_buf->bssid[i], HEX);
-      Serial.print(':');
-    }
-    Serial.println("\n---------");
+    MAC m1, m2;
+    os_memset(m1.addr, 0, 6);
+    os_memcpy(m1.addr, probe_buf->rdaddr, 6);
+    macs.insert(m1);
+    os_memset(m2.addr, 0, 6);
+    os_memcpy(m2.addr, probe_buf->tsaddr, 6);
+    macs.insert(m2);
 }
 
 void setup()
@@ -130,11 +142,24 @@ void setup()
 
 void loop()
 {
+  sec_count++;
   uint8 new_channel = wifi_get_channel() % 12 + 1;
   wifi_set_channel(new_channel);
-  Serial.print("Channel set to ");
-  Serial.println(new_channel);
+//  Serial.print("Channel set to ");
+//  Serial.println(new_channel);
 
   // wait one second before changing the channel
   delay(1000);
+
+  if (sec_count % 30 == 0) {
+    set <MAC>::iterator iter;
+    for( iter = macs.begin(); iter != macs.end(); iter++ ) {
+      for(int i=0; i<6; i++) {
+        Serial.print(iter->addr[i], HEX);
+        Serial.print(':');
+      }
+      Serial.println();
+    }
+    Serial.println("--------------------");
+  }
 }
