@@ -15,9 +15,7 @@ I'm using a Witty cloud development board, but a NodeMCU should also do the tric
 ### Software
 
 - Install the Arduino IDE, and add the ESP8266 libs (https://github.com/esp8266/Arduino).
-- Add the standard library (-lstdc++) to the compiler.c.elf.libs line in your ESP8266 platform.txt file (probably located in ~/Arduino/hardware/esp8266com/esp8266/platform.txt):
-```compiler.c.elf.libs=-lm -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lcrypto -lmain -lwps -laxtls -lsmartconfig -lmesh -lwpa2 -lstdc++
-```
+- Add the standard library (-lstdc++) to the compiler.c.elf.libs line in your ESP8266 platform.txt file (probably located in ~/Arduino/hardware/esp8266com/esp8266/platform.txt): ```compiler.c.elf.libs=-lm -lgcc -lhal -lphy -lpp -lnet80211 -llwip -lwpa -lcrypto -lmain -lwps -laxtls -lsmartconfig -lmesh -lwpa2 -lstdc++```
 - Open esp-sniff.ino
 - Set Tools > Board to "Generic ESP8266 Module"
 - Set Tools > Upload Speed to 115200
